@@ -1,1 +1,414 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KSL 대화통역 연습 · 단일 샘플</title>
+  <style>
+    :root{
+      --bg:#0f172a; --panel:#0b1220; --card:#111827; --ink:#e5e7eb; --muted:#94a3b8;
+      --accent:#22d3ee; --accent2:#60a5fa; --ok:#34d399; --warn:#f59e0b;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Pretendard,sans-serif}
+    header{position:sticky;top:0;z-index:10;background:rgba(15,23,42,.7);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.08)}
+    .wrap{max-width:900px;margin:0 auto;padding:16px}
+    h1{margin:0;font-size:20px}
+    main{max-width:900px;margin:0 auto;padding:16px}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;box-shadow:0 10px 25px rgba(0,0,0,.25)}
+    .row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
+    .sentence{font-size:20px;line-height:1.6;margin:0 0 6px}
+    .keyword{font-size:13px;color:var(--muted);margin:0 0 10px}
+    .idx{font-size:12px;color:var(--muted)}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+    button{border:0;padding:9px 12px;border-radius:12px;font-weight:700;cursor:pointer}
+    button.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1220}
+    button.secondary{background:#1f2937;color:var(--ink);border:1px solid rgba(255,255,255,.08)}
+    button.ghost{background:transparent;color:var(--ink);border:1px dashed rgba(255,255,255,.2)}
+    video{width:100%;max-height:65vh;border-radius:12px;background:#000}
+    .video-wrap{margin-top:10px;display:none}
+    .hint{font-size:12px;color:var(--muted);margin-top:6px}
+    footer{text-align:center;color:var(--muted);font-size:12px;padding:24px 0 60px}
 
+    /* 시작 화면 */
+    .start{position:fixed;inset:0;background:radial-gradient(1200px 600px at 50% -10%,rgba(96,165,250,.15),transparent 60%),var(--panel);display:flex;align-items:center;justify-content:center;padding:24px}
+    .start .panel{width:min(720px,95vw);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+    .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .mode{padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#0c1426}
+    .mode h3{margin:0 0 6px;font-size:16px}
+    .mode p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+    .mode button{margin-top:10px;width:100%}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted)}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap topbar">
+      <h1>KSL 대화통역 연습 · 단일 샘플</h1>
+      <div class="pill" id="modePill">모드: —</div>
+    </div>
+  </header>
+
+  <!-- 시작 화면 -->
+  <section class="start" id="start">
+    <div class="panel">
+      <h2 style="margin:0 0 6px;font-size:18px">시작 모드를 선택하세요</h2>
+      <p style="margin:0 0 12px;color:var(--muted);font-size:13px">
+        • <b>음성통역</b>: <u>수어 영상</u>이 먼저 자동 재생됩니다. 정답 토글 시 한국어 문장이 보입니다.<br/>
+        • <b>수화통역</b>: <u>한국어 문장</u>이 먼저 보이고, 한국어 음성이 자동 재생됩니다. 정답 토글 시 영상이 보입니다.
+      </p>
+      <div class="mode-grid">
+        <div class="mode">
+          <h3>🎧 음성통역 (Video ▶ → Sentence)</h3>
+          <p>수어 영상을 보고 음성으로 해석하는 연습</p>
+          <button class="primary" id="startVoice">음성통역으로 시작</button>
+        </div>
+        <div class="mode">
+          <h3>🤟 수화통역 (Sentence ▶ → Video)</h3>
+          <p>문장을 보고 수어로 표현하는 연습 (한국어 음성 자동 재생)</p>
+          <button class="secondary" id="startSign">수화통역으로 시작</button>
+        </div>
+      </div>
+      <p class="hint">※ 시작 버튼 클릭은 사용자 제스처로 인정되어 영상/음성 자동재생이 원활해집니다.</p>
+    </div>
+  </section>
+
+  <main>
+    <section class="card">
+      <div class="row">
+        <div>
+          <p class="sentence" id="sentence">—</p>
+          <p class="keyword">어휘: <span id="kw">—</span></p>
+        </div>
+        <div class="idx" id="idx">1 / 1</div>
+      </div>
+
+      <div class="controls">
+        <button id="btnPrev" class="secondary" title="이전(←)">◀ 이전</button>
+        <button id="btnReveal" class="primary">✅ 정답 토글</button>
+        <button id="btnHide" class="ghost">숨기기</button>
+        <button id="btnNext" class="secondary" title="다음(→)">다음 ▶</button>
+        <button id="btnMode" class="ghost" title="모드 전환">모드 전환</button>
+      </div>
+
+      <div class="video-wrap" id="videoWrap">
+        <video id="vid" playsinline controls preload="metadata" muted></video>
+        <div class="hint">※ 모바일에서는 자동재생이 제한될 수 있습니다. 재생 버튼을 눌러 주세요.</div>
+      </div>
+    </section>
+  </main>
+
+  <footer>© 2025 KSL Practice · 시작 화면에서 선택한 모드에 따라 영상/음성이 자동 재생됩니다.</footer>
+
+  <script>
+    /* =========================
+       1) 데이터 (샘플 1개만)
+       ========================= */
+    const DATA = [
+      { k: "사백, 사백 원", ex: "○○이가 일하러 간 카페는 평수가 사백 평으로, 무척 넓다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KNeEL0fNFGpuJfeu.mp4" },
+{ k: "일곱, 칠", ex: "○○이네 가족은 7대째 농인으로 구성되어 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Y2RipTuBQhrMKWhY.mp4" },
+{ k: "억, 일억", ex: "○○이는 1억을 열심히 모아 차를 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KBGalJBcEREj48NM.mp4" },
+{ k: "스물일곱, 이십칠", ex: "○○이는 2월 27일에 결혼한다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/bbPsSo4UeYlobcxa.mp4" },
+{ k: "삼천, 삼천 원", ex: "○○이는 3,000m 달리기 경기에서 1등을 했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/RxSrObezVTztW1qn.mp4" },
+{ k: "넷, 사", ex: "○○이는 공기밥 네 개를 다 비울 정도로 먹성이 좋다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/fWMNqgycUKJyf5DQ.mp4" },
+{ k: "이백", ex: "○○이는 라면 이백 박스를 농아인협회에 기부하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ijobJabyiSHRwLJ3.mp4" },
+{ k: "스물다섯, 이십오", ex: "○○이는 스물다섯 살에 결혼하고 싶다고 말했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/gANdOckOBfK8zGbE.mp4" },
+{ k: "스물여덟, 이십팔", ex: "○○이는 스물여덟 살에 회사를 그만두고, 지금은 기계 기술을 배운다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Tv4SiJVP72GMIdO8.mp4" },
+{ k: "십만, 십만 원", ex: "○○이는 아르바이트로 일당 10만 원을 벌었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/UfEnwCtbQXxQ0v3q.mp4" },
+{ k: "스물여섯, 이십육", ex: "○○이는 임신 26주 차다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ioTnEYGapv9amVRj.mp4" },
+{ k: "구백, 구백 원", ex: "○○이의 본 토익 시험 점수가 900점이라니 대단하다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/FuqvbLSloU5qJnGu.mp4" },
+{ k: "열, 십", ex: "10월 10일은 나의 생일이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/gcrcHdiYmb2BLlR7.mp4" },
+{ k: "열다섯, 십오", ex: "5월 15일은 스승의 날이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/GPqgmaHPrq6cCeYq.mp4" },
+{ k: "열여덟, 십팔", ex: "가: 나 어제 새로 나온 청소년 관람 불가 영화를 봤는데, 정말 재미있더라. 나: 아, 그랬구나.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/DAb9X0ZdgiFMYVot.mp4" },
+{ k: "영, 공, 빵", ex: "가: 나는 해외여행을 3번 다녀왔어. 너는? 나: 나는 한 번도 가 본 적 없어.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/w43jyifDXiUwBqOa.mp4" },
+{ k: "사만, 사만 원", ex: "가: 네가 입은 옷 참 예쁘다. 얼마야? 나: 사만 원이야.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/zbmU9AltH2muZqNV.mp4" },
+{ k: "팔백, 팔백 원", ex: "가: 농아인 협회 행사에 참여하는 사람은 몇 명이야? 나: 대략 팔백 명 정도야.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/8bBqVEjHa5wFO6Eb.mp4" },
+{ k: "스물아홉, 이십구", ex: "가: 다음 주 5월 29일에 만날 수 있어? 나: 그래.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/CdgUhzSHJNr6cxIM.mp4" },
+{ k: "마흔, 사십", ex: "가: 동창이 몇 명이야? 나: 40명.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/75lQ7SasJT4GgFun.mp4" },
+{ k: "(숫자) 조", ex: "가: 소문으로는 ○○네 집이 재산이 1조나 되는 엄청 부잣집이래. 나: 뭐? 뜬소문 아냐?", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/og87SC0Ae6T3OdjK.mp4" },
+{ k: "아홉, 구", ex: "가: 어제 야구 모임에 몇 명이나 왔어요? 나: 아홉 명이요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/F6UlNlinQC6dMQiU.mp4" },
+{ k: "열여섯, 십육", ex: "가: 원하는 등번호가 있니? 나: 16번이요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/0qn0DCT3xp7maAps.mp4" },
+{ k: "칠천, 칠천 원", ex: "가: 저기 며칠 전에 내가 너한테 얼마를 빌렸지? 나: 칠천 원이야.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/MPiVaUcM6CSwxie6.mp4" },
+{ k: "하나, 일", ex: "가: 커피에 설탕 몇 스푼 넣으시나요? 나: 한 스푼이요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/bNbrgnkbQCIFeuFx.mp4" },
+{ k: "서른, 삼십", ex: "가: 컴퓨터 모니터 사이즈가 어떻게 되요? 나: 30인치요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/nmRNJyF2PJFgxuvq.mp4" },
+{ k: "열아홉, 십구", ex: "가: 학교 졸업 기수가 뭐야? 나: 19기예요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/awOiivtOkC7ZIzL4.mp4" },
+{ k: "칠천, 칠천 원", ex: "공장에서 조립한 부품을 발송한 지 며칠 후에 칠천 개가 불량이라는 통보를 받았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/IDSBzYw6ZbadfMcp.mp4" },
+{ k: "열하나, 십일", ex: "구두를 좋아하는 내 여동생이 사 둔 신발이 열한 켤레나 된다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/M198j28T8UIiOvKk.mp4" },
+{ k: "열, 십, 십 원", ex: "나는 10번 버스가 오는 것을 보고 뛰어가서 탔다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ConVoQOPjmMaBzLR.mp4" },
+{ k: "스물여섯, 이십육", ex: "나는 12월 26일에 약속이 있어서 회사에 휴가를 신청했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/5NIlXk0Tl6TY2w8u.mp4" },
+{ k: "삼만, 삼만 원", ex: "나는 고기를 먹고 나서 계산서를 보고 1인당 삼만 원씩 걷었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/o19CB3T06qL3Td0s.mp4" },
+{ k: "셋, 삼", ex: "나는 고깃집에 가서 3인분을 주문했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/mmx1oiVgL8kmZKqf.mp4" },
+{ k: "백, 백 원", ex: "나는 고등학생 때 100m 달리기 선수였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/tNtAMGJh4C9BiYt1.mp4" },
+{ k: "구만, 구만 원", ex: "나는 과일 가게에서 9만 원어치를 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/UQc24PRKwJm5Yhul.mp4" },
+{ k: "여덟, 팔", ex: "나는 낚시를 해서 물고기 여덟 마리를 잡았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/1HVeE6winyxamMe9.mp4" },
+{ k: "팔만, 팔만 원", ex: "나는 내 여동생 생일 선물로 8만 원짜리 신발을 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/aZbHuHWYyj2VPvCw.mp4" },
+{ k: "칠백, 칠백 원", ex: "나는 돼지고기를 700g을 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/mc8kULLzb6u9a9hg.mp4" },
+{ k: "둘, 이", ex: "나는 마트에 들어갔다가 포도가 맛있어 보여서 두 박스를 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/GPJKyiQwgKyYwaTu.mp4" },
+{ k: "천, 일천, 천 원", ex: "나는 발행된 천 원짜리 지폐를 수집하고 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/06k7ZYk6al6qhVC1.mp4" },
+{ k: "칠만, 칠만 원", ex: "나는 사장님과 임금 협상을 하여 월급이 7만 원 인상되었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/V91FzP4ZaIh5FjMB.mp4" },
+{ k: "열, 십", ex: "나는 살을 빼기 위해 매일 운동장을 열 바퀴씩 뛸 것이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KFqiQAvtbelqfXdE.mp4" },
+{ k: "오천, 오천 원", ex: "나는 세탁기에서 꺼낸 옷 주머니에서 5천 원을 발견했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/2qSxgUqwEWurjPGM.mp4" },
+{ k: "이백, 이백 원", ex: "나는 수영 200m 경기에서 금메달을 땄다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/R0IDE6v7NS5CIVQi.mp4" },
+{ k: "셋, 삼", ex: "나는 수영 경기에서 메달 3개를 땄다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ZLc3sl0AFZUolZI9.mp4" },
+{ k: "여든, 팔십", ex: "나는 수학 시험 점수 80점을 받았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/jtrzUtMvbaqZRY34.mp4" },
+{ k: "일곱, 칠", ex: "나는 숫자 7을 좋아한다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/IllEk9etBsYlz7MC.mp4" },
+{ k: "스물넷, 이십사", ex: "나는 스물네 개들이 생수 한 묶음을 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/km0nGgbJ80dh4gLr.mp4" },
+{ k: "스물하나, 이십일", ex: "나는 스물한 살에 대학교에 입학했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/YD48X9HuDIubpc9U.mp4" },
+{ k: "십만, 십만 원", ex: "나는 십만 원 미만의 지갑은 구매할 수 있을 것 같다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/RDERxs99u7C2myzM.mp4" },
+{ k: "여덟, 팔", ex: "나는 어제 서점에 가서 책을 여덟 권 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KXKcQNzcp0ZGLXG2.mp4" },
+{ k: "오천, 오천 원", ex: "나는 어제 오천 원을 잃어버렸다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/LLIWmefKJmZcUtQn.mp4" },
+{ k: "만, 일만, 만 원", ex: "나는 엄마에게 받은 만 원을 은행에 저금했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/lv4YQBhQzqkbZBL5.mp4" },
+{ k: "스물넷, 이십사", ex: "나는 에어컨 바람이 추워서 온도를 18도에서 24도로 올렸다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/yEzvDeRopcSOaYa2.mp4" },
+{ k: "둘, 이", ex: "나는 여동생과 종일 공부를 하다가 너무 배고파서 치킨 두 마리를 주문했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/9h5LlLFchbmBYiGh.mp4" },
+{ k: "여섯, 육", ex: "나는 여섯 마리의 개를 키우고 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/yywbhYMmvtQyYoXv.mp4" },
+{ k: "넷, 사", ex: "나는 오늘 하루 네 끼를 먹었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/VKVru4zH54LJcA21.mp4" },
+{ k: "칠만, 칠만 원", ex: "나는 오랜만에 만난 삼촌에게 공부 열심히 하라는 잔소리를 들었지만, 용돈 7만 원을 받아 기분이 좋았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/tlQamF9KLajZ1v42.mp4" },
+{ k: "스물셋, 이십삼", ex: "나는 우리 가문의 23대손이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/iWcRa5XY1n6zkzOT.mp4" },
+{ k: "스물여덟, 이십팔", ex: "나는 운전 면허증을 취득한 후 스물여덟 살에 차를 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/tRRo7ANo0Wlwwvk1.mp4" },
+{ k: "열둘, 십이", ex: "나는 운전 중에 12중 추돌사고가 나는 것을 보았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ioWwnPa6gBgpKLQx.mp4" },
+{ k: "열셋, 십삼", ex: "나는 운전면허 시험을 열세 번 떨어졌다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/qJUHxRUsY0m9j1cl.mp4" },
+{ k: "아흔, 구십", ex: "나는 운전면허 필기 시험에 응시하여 90점을 받았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/3AgJYynvvd50ppr6.mp4" },
+{ k: "억, 일억", ex: "나는 일 억을 모으는 것이 목표이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/AMvEKhemMnf4yBp5.mp4" },
+{ k: "열셋, 십삼", ex: "나는 일을 마치고 집에 가려고 13번 버스를 기다렸다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/LOI4DSWUbJvNSks9.mp4" },
+{ k: "이백, 이백 원", ex: "나는 입이 심심해서 200원짜리 사탕을 하나 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/O2XmKsBjMhYKcvut.mp4" },
+{ k: "여섯, 육", ex: "나는 졸려서 오늘 하루 동안 커피를 여섯 잔 마셨다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/HvG7DmVmXtojvo2e.mp4" },
+{ k: "열넷, 십사", ex: "나는 지금까지 휴대폰을 열네 번 바꿨다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/yNzxHeZHnHtv6e83.mp4" },
+{ k: "열둘, 십이", ex: "나는 집에 안경이 열두 개 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/wTN3uJDoEpkNuG3W.mp4" },
+{ k: "일흔, 칠십", ex: "나는 집에서 심심해서 핸드폰으로 만화를 잠깐 보려고 했는데, 어느새 70회까지 봤다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/tnOZ9Sei1MXfbdEw.mp4" },
+{ k: "천만, 천만 원", ex: "나는 집을 사려고 하는데 돈이 부족해서 은행에서 천만 원을 대출을 받았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/LUZ0TPdcpzSbB1jv.mp4" },
+{ k: "마흔, 사십", ex: "나는 집을 찾다 40평 정도의 괜찮은 집을 계약했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/VTfCIRKmCOVfsohz.mp4" },
+{ k: "삼천, 삼천 원", ex: "나는 차를 구입한 지 얼마 되지 않았는데, 벌써 3,000km나 주행했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/TuLoDHj5smyPW8gz.mp4" },
+{ k: "육백, 육 백원", ex: "나는 책상 위에 있던 동전 육백 원이 없어져서 의아했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/DQDJ9CpXGgwiznXA.mp4" },
+{ k: "열넷, 십사", ex: "나는 청각장애인통역사 14기이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/B4qpWX7vUAlK9WFc.mp4" },
+{ k: "백, 백 원", ex: "나는 초등학교 시절 돼지 저금통에 백 원짜리 동전을 열심히 모았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/hoOdGpmhAwicibwK.mp4" },
+{ k: "오백, 오백 원", ex: "나는 취미로 오백 원짜리 동전을 모은다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/CZK7GZlb7EmdFaGi.mp4" },
+{ k: "이백", ex: "나는 카페를 운영하던 중에 커피 원두가 다 떨어져서 200봉지를 추가로 주문했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/eWt8n8VcUnbd8V8i.mp4" },
+{ k: "아홉, 구", ex: "나는 커피 아홉 잔을 주문했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/F1L8YSlIghVgIcHK.mp4" },
+{ k: "육만, 육만 원", ex: "나는 하루 종일 놀면서 육만 원을 썼다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/SJJCqpomhgccVFtC.mp4" },
+{ k: "구만, 구만 원", ex: "나는 핸드폰 요금으로 매달 9만 원을 낸다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/boJwpGs9td9II23c.mp4" },
+{ k: "천만, 천만 원", ex: "나는 형편이 어려운 이웃 돕기에 천만 원을 기부하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/kP0ZYtlpopLvIFkL.mp4" },
+{ k: "삼백, 삼백 원", ex: "나는 회사 친목 체육 대회 기념품을 300개 준비하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/mOD1lHHMh7Cr3tWi.mp4" },
+{ k: "스물일곱, 이십칠", ex: "나는 회의에 필요한 서류를 출력했는데 스물일곱 장으로 딱 맞다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/lI7zujkFKG9gBK5X.mp4" },
+{ k: "구천, 구천 원", ex: "나와 여동생은 각자 구천 원씩 돈을 내서 과자를 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/0oms8xuMN66SYT69.mp4" },
+{ k: "(숫자) 백", ex: "내 결혼식에 온 하객은 대략 100명이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/4Jp0uWpDcAhYiv5b.mp4" },
+{ k: "사만, 사만 원", ex: "내 고향의 인구 수는 총 사만 명이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/SBoMF72ifjSPL2BE.mp4" },
+{ k: "열일곱, 십칠", ex: "내 생일은 2월 17일이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/GNsfH8pznJmPqmMn.mp4" },
+{ k: "스물셋, 이십삼", ex: "내 아들에게 23호 옷을 입혀보니 딱 맞는다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/LEc30qbo7alJjvuW.mp4" },
+{ k: "스물하나, 이십일", ex: "내 여동생은 스물한 살이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/WGSrm212GAEOqtsz.mp4" },
+{ k: "만, 일만, 만 원", ex: "내 지갑을 꺼내 보니 만 원이 없어졌다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/u0hhPYRy0NeA1ycA.mp4" },
+{ k: "하나, 일", ex: "내 친척들 중 수어가 가능한 사람은 고모뿐이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/gCDcck2HMM6sLiuS.mp4" },
+{ k: "이천, 이천 원", ex: "내가 간 음식점의 메뉴가 모두 이천 원씩 인상되었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/QEz4so8fYmrpQHtv.mp4" },
+{ k: "구백, 구백 원", ex: "내가 다녔던 고등학교의 총 학생 수는 구백여 명이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/vE9G3znr23Vir8Ec.mp4" },
+{ k: "스물아홉, 이십구", ex: "내가 지금까지 여행을 다닌 나라는 29개국이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/d4HmWuuQT7DzWF91.mp4" },
+{ k: "팔백, 팔백 원", ex: "내가 취미 삼아 그린 그림이 800장 정도 된다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/JtHJfVKv7tfcZNaF.mp4" },
+{ k: "천, 일천, 천 원", ex: "내가 한 카페에 들어갔는데, 커피류를 모두 천 원씩 할인해 주고 있었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/y35Q64nlfdQ0QgT8.mp4" },
+{ k: "칠백, 칠백 원", ex: "내가 핸드폰으로 찍은 여행 사진이 무려 700장이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/VpHSaHV4GSBN25m3.mp4" },
+{ k: "예순, 육십", ex: "내일 우리 식당 예약 인원은 60명이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/4UHIsWYTOS7pwRzM.mp4" },
+{ k: "열여섯, 십육", ex: "농아인협회에서 진행하는 수어 교육이 16회차로 어제 마무리되었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Bg4v2boO6z9ibiRP.mp4" },
+{ k: "오백, 오백 원", ex: "농인 뮤지컬이 개막하여 500석의 관람석 예매가 시작되었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/FXIPPZWo3UTfLPKq.mp4" },
+{ k: "쉰, 오십, 오십 원", ex: "다음 주 수학여행을 위해서 도시락 50개를 미리 주문했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/z0wGitQbkHQ2XQ4P.mp4" },
+{ k: "열, 십, 십 원", ex: "라면이 처음 출시됐을 때는 가격이 하나에 십 원이었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/5wjeK6KjhjkLB7mZ.mp4" },
+{ k: "팔천, 팔천 원", ex: "마라톤 대회에 참여한 인원은 무려 팔천 명 이상이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/YNLDkIduV1w5l8vx.mp4" },
+{ k: "서른, 삼십", ex: "바깥 기온이 30도로 상당히 덥다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/9Sur6i65d4aoAWvu.mp4" },
+{ k: "팔만, 팔만 원", ex: "새로 생긴 도서관에는 책이 대략 8만 권 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/9C60ZwWYrpT2mdvO.mp4" },
+{ k: "삼만, 삼만 원", ex: "아빠, 저 용돈 삼만 원만 주세요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/mSxA7Sbq0foNmyMi.mp4" },
+{ k: "사천, 사천 원", ex: "얘, 거기 내 지갑에서 사천 원 좀 꺼내 와.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/qJlgLr0N36ZAgplP.mp4" },
+{ k: "열일곱, 십칠", ex: "오늘 기온은 섭씨 17도이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/pGeXj3PK9sxyfxRI.mp4" },
+{ k: "스물둘, 이십이", ex: "오늘 밤 기온은 22도로 조금 쌀쌀하다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/9PBDfHZB1kjApyPj.mp4" },
+{ k: "열아홉, 십구", ex: "오늘 밤에 방영될 드라마 19회가 기대된다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/H0Yr6GSmqMSejlzE.mp4" },
+{ k: "쉰, 오십, 오십 원", ex: "올해로 벌써 내 나이가 50이야. 이제 건강에 신경 써야겠다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/r4kRl4r19Z9ycx7S.mp4" },
+{ k: "영, 공, 빵", ex: "외국은 대부분 아기가 태어나면 나이가 영 살이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/c5e0aSf8ZfoVcFkS.mp4" },
+{ k: "사백, 사백 원", ex: "외할아버지께서는 사백 평의 논을 소유하고 계신다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/xhOEC5gE6h3u5Of1.mp4" },
+{ k: "열다섯, 십오", ex: "우리 부모님은 음식점 지점을 열다섯 개 냈다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/NWTug6WOo9vU8jFS.mp4" },
+{ k: "스무, 스물, 이십", ex: "우리 아들의 몸무게는 20kg이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Jhp67vgXU8MV4Iu8.mp4" },
+{ k: "스무, 스물, 이십", ex: "우리 엄마는 스무 살에 결혼했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/arh9gs5P44R6NqqB.mp4" },
+{ k: "다섯, 오", ex: "우리 오빠는 다섯 곳의 대학교에 합격하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/CzDVBiEOhQTFAuGq.mp4" },
+{ k: "여든, 팔십", ex: "우리 외할머니는 80세이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ICkcsWfxSrVZTZSW.mp4" },
+{ k: "(숫자) 백", ex: "우리 작은 아빠가 키우는 닭이 낳은 새끼가 점점 늘어나 100마리가 되었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/jfhYMsTc7zL1SFlg.mp4" },
+{ k: "열하나, 십일", ex: "우리 집 개가 이번에 강아지를 열한 마리 낳았다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/oQdsAZUl0L8iw0r2.mp4" },
+{ k: "다섯, 오", ex: "우리 집에는 방이 다섯 개가 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/W28qeiKXhePsBqW4.mp4" },
+{ k: "일흔, 칠십", ex: "우리 할머니는 공부에 대한 의욕으로 70세의 나이에 대학교에 입학하셨다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/5XPQADy2KmJENEkS.mp4" },
+{ k: "아흔, 구십", ex: "우리 할아버지는 나이가 아흔이신데 여전히 정정하시다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/irYcERAmC74B8tx3.mp4" },
+{ k: "삼백, 삼백 원", ex: "우리 회사는 300석 규모의 구내식당이 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/z0QBtf4Jdh0VwWFt.mp4" },
+{ k: "(숫자) 조", ex: "우리 회사의 작년 수익은 1조 원이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/cpx8esGSeeCQDmCt.mp4" },
+{ k: "육백, 육 백원", ex: "우리 회사의 전체 직원 수는 대략 600명이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/hsYQ5kdyEsSIdwkP.mp4" },
+{ k: "예순, 육십", ex: "우리집 옆 도로의 제한 속도는 시속 60km이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/wjdiaNYjpBxABbVA.mp4" },
+{ k: "이천, 이천 원", ex: "이번 채용에서 지원자가 이천 명이 넘게 몰렸다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/DO1UUQsEXVlZZmqH.mp4" },
+{ k: "팔천, 팔천 원", ex: "인기 가수가 초청된 행사에 관객이 무려 팔천 명 이상 몰렸다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/jGpRw1xI4mIM2wpK.mp4" },
+{ k: "사천, 사천 원", ex: "자동차 공장에서 4천 대의 자동차를 생산하여 해외로 수출했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/K5KPwcPhCMsPTwxH.mp4" },
+{ k: "스물다섯, 이십오", ex: "저녁 기온은 섭씨 25도이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/AOjJWHJzfuOUlcZY.mp4" },
+{ k: "스물둘, 이십이", ex: "점심을 먹으려고 간 식당에 대기가 있는 것을 보고 내가 몇 번째인지 확인했더니, 스물두 번째로 한참을 기다려야 한다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/6m7ip34Pv2XoFjiy.mp4" },
+{ k: "육만, 육만 원", ex: "한국과 브라질과의 월드컵 축구 경기에 6만 명의 인파가 몰려들었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/BZRcUDCXF8d3NL1Q.mp4" },
+{ k: "열여덟, 십팔", ex: "할머니 생신 선물을 뭘로 살까 고민하다가 18k 목걸이를 구매하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/pYNJsUBQa11kHwDv.mp4" },
+
+    ];
+
+    /* =========================
+       2) 상태 및 요소 참조
+       ========================= */
+    let mode = null; // 'voice' = 음성통역(영상 먼저), 'sign' = 수화통역(문장+TTS 먼저)
+    let cur = 0;
+
+    const $start = document.getElementById('start');
+    const $modePill = document.getElementById('modePill');
+
+    const $sentence = document.getElementById('sentence');
+    const $kw = document.getElementById('kw');
+    const $idx = document.getElementById('idx');
+
+    const $btnPrev = document.getElementById('btnPrev');
+    const $btnNext = document.getElementById('btnNext');
+    const $btnReveal = document.getElementById('btnReveal');
+    const $btnHide = document.getElementById('btnHide');
+    const $btnMode = document.getElementById('btnMode');
+
+    const $videoWrap = document.getElementById('videoWrap');
+    const $video = document.getElementById('vid');
+
+    /* =========================
+       3) 보조 함수 (음성/TTS)
+       ========================= */
+    function stopSpeech(){
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+    function speakKorean(text){
+      stopSpeech();
+      if(!('speechSynthesis' in window)) return;
+      const utter = new SpeechSynthesisUtterance(text);
+      // ko-KR 보이스 우선 선택
+      const pickVoice = () => {
+        const voices = speechSynthesis.getVoices();
+        const ko = voices.find(v => /ko-KR/i.test(v.lang)) || voices.find(v => v.lang && v.lang.startsWith('ko'));
+        if(ko) utter.voice = ko;
+        utter.rate = 1.0;
+        utter.pitch = 1.0;
+        utter.volume = 1.0;
+        speechSynthesis.speak(utter);
+      };
+      const voices = speechSynthesis.getVoices();
+      if(!voices || voices.length === 0){
+        // 일부 브라우저는 async 로드
+        speechSynthesis.onvoiceschanged = () => { pickVoice(); };
+      } else {
+        pickVoice();
+      }
+    }
+
+    function stopVideo(){
+      try { $video.pause(); } catch(e){}
+      $video.removeAttribute('src');
+      $video.load();
+    }
+
+    function hideAll(){
+      stopSpeech();
+      stopVideo();
+      $videoWrap.style.display = 'none';
+    }
+
+    /* =========================
+       4) 렌더
+       ========================= */
+    function setMode(nextMode){
+      mode = nextMode; // 'voice' | 'sign'
+      $modePill.textContent = "모드: " + (mode === 'voice' ? "음성통역 (영상 먼저)" : "수화통역 (문장+음성 먼저)");
+      $start.style.display = 'none';
+      render(true); // 사용자 제스처 직후 렌더 → 자동재생 시도
+    }
+
+    function render(autoplay=false){
+      const item = DATA[cur];
+      $idx.textContent = `${cur+1} / ${DATA.length}`;
+      $kw.textContent = item.k || '—';
+      hideAll();
+
+      if(mode === 'voice'){
+        // 음성통역: 영상 먼저, 문장 가림
+        $sentence.textContent = '정답: (가림)';
+        if(autoplay){
+          $video.src = item.src;
+          $videoWrap.style.display = 'block';
+          $video.muted = true; // 무음 자동재생 보장
+          const p = $video.play();
+          if(p && typeof p.then === 'function'){ p.catch(()=>{}); }
+        }
+      } else if(mode === 'sign'){
+        // 수화통역: 문장 먼저 + 한국어 음성 자동재생
+        $sentence.textContent = item.ex || '—';
+        if(autoplay){
+          speakKorean(item.ex || '');
+        }
+      } else {
+        // 모드 미정
+        $sentence.textContent = '시작 화면에서 모드를 선택해 주세요.';
+      }
+    }
+
+    /* =========================
+       5) 이벤트
+       ========================= */
+    document.getElementById('startVoice').addEventListener('click', () => setMode('voice'));
+    document.getElementById('startSign').addEventListener('click', () => setMode('sign'));
+
+    $btnPrev.addEventListener('click', () => {
+      cur = (cur - 1 + DATA.length) % DATA.length;
+      render(true);
+    });
+    $btnNext.addEventListener('click', () => {
+      cur = (cur + 1) % DATA.length;
+      render(true);
+    });
+
+    // 정답 토글: mode에 따라 반대쪽 매체를 보여줌/숨김
+    $btnReveal.addEventListener('click', () => {
+      const item = DATA[cur];
+      if(mode === 'voice'){
+        // 현재 영상 먼저 → 정답 토글 시 문장 공개
+        if($sentence.textContent.includes('(가림)')){
+          $sentence.textContent = item.ex || '—';
+        } else {
+          $sentence.textContent = '정답: (가림)';
+        }
+      } else if(mode === 'sign'){
+        // 현재 문장 먼저 → 정답 토글 시 영상 토글
+        if($videoWrap.style.display === 'none'){
+          $video.src = item.src;
+          $videoWrap.style.display = 'block';
+          // 문장을 이미 들려줬다면 영상은 자동재생
+          $video.muted = true;
+          const p = $video.play();
+          if(p && typeof p.then === 'function'){ p.catch(()=>{}); }
+        } else {
+          stopVideo();
+          $videoWrap.style.display = 'none';
+        }
+      }
+    });
+
+    // 숨기기: 모든 미디어 숨김/중지
+    $btnHide.addEventListener('click', hideAll);
+
+    // 모드 전환
+    $btnMode.addEventListener('click', () => {
+      stopSpeech(); stopVideo();
+      mode = (mode === 'voice') ? 'sign' : 'voice';
+      $modePill.textContent = "모드: " + (mode === 'voice' ? "음성통역 (영상 먼저)" : "수화통역 (문장+음성 먼저)");
+      render(true);
+    });
+
+    // 키보드 네비게이션
+    window.addEventListener('keydown', (e)=>{
+      if(['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+      if(e.key === 'ArrowLeft'){ e.preventDefault(); $btnPrev.click(); }
+      if(e.key === 'ArrowRight'){ e.preventDefault(); $btnNext.click(); }
+      if(e.code === 'Space'){ e.preventDefault(); $btnReveal.click(); }
+    });
+
+    // 초기 화면
+    render(false);
+  </script>
+</body>
+</html>
