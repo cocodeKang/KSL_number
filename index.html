@@ -3,17 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KSL 대화통역 연습 · 단일 샘플</title>
+  <title>KSL 대화통역 연습 · 업데이트</title>
   <style>
     :root{
       --bg:#0f172a; --panel:#0b1220; --card:#111827; --ink:#e5e7eb; --muted:#94a3b8;
-      --accent:#22d3ee; --accent2:#60a5fa; --ok:#34d399; --warn:#f59e0b;
+      --accent:#22d3ee; --accent2:#60a5fa;
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Noto Sans KR,Pretendard,sans-serif}
     header{position:sticky;top:0;z-index:10;background:rgba(15,23,42,.7);backdrop-filter:blur(8px);border-bottom:1px solid rgba(255,255,255,.08)}
-    .wrap{max-width:900px;margin:0 auto;padding:16px}
-    h1{margin:0;font-size:20px}
+    .wrap{max-width:900px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:10px;justify-content:space-between}
+    h1{margin:0;font-size:18px}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    button{border:0;padding:8px 12px;border-radius:12px;font-weight:700;cursor:pointer}
+    .primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1220}
+    .secondary{background:#1f2937;color:var(--ink);border:1px solid rgba(255,255,255,.08)}
+    .ghost{background:transparent;color:var(--ink);border:1px dashed rgba(255,255,255,.2)}
+    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted)}
     main{max-width:900px;margin:0 auto;padding:16px}
     .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:16px;box-shadow:0 10px 25px rgba(0,0,0,.25)}
     .row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}
@@ -21,32 +27,29 @@
     .keyword{font-size:13px;color:var(--muted);margin:0 0 10px}
     .idx{font-size:12px;color:var(--muted)}
     .controls{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
-    button{border:0;padding:9px 12px;border-radius:12px;font-weight:700;cursor:pointer}
-    button.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1220}
-    button.secondary{background:#1f2937;color:var(--ink);border:1px solid rgba(255,255,255,.08)}
-    button.ghost{background:transparent;color:var(--ink);border:1px dashed rgba(255,255,255,.2)}
     video{width:100%;max-height:65vh;border-radius:12px;background:#000}
     .video-wrap{margin-top:10px;display:none}
     .hint{font-size:12px;color:var(--muted);margin-top:6px}
     footer{text-align:center;color:var(--muted);font-size:12px;padding:24px 0 60px}
 
     /* 시작 화면 */
-    .start{position:fixed;inset:0;background:radial-gradient(1200px 600px at 50% -10%,rgba(96,165,250,.15),transparent 60%),var(--panel);display:flex;align-items:center;justify-content:center;padding:24px}
+    .start{position:fixed;inset:0;background:radial-gradient(1100px 520px at 50% -10%,rgba(96,165,250,.12),transparent 60%),var(--panel);display:flex;align-items:center;justify-content:center;padding:24px}
     .start .panel{width:min(720px,95vw);background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
     .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
     .mode{padding:14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:#0c1426}
     .mode h3{margin:0 0 6px;font-size:16px}
     .mode p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
     .mode button{margin-top:10px;width:100%}
-    .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:4px 10px;font-size:12px;color:var(--muted)}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:8px}
   </style>
 </head>
 <body>
   <header>
-    <div class="wrap topbar">
-      <h1>KSL 대화통역 연습 · 단일 샘플</h1>
-      <div class="pill" id="modePill">모드: —</div>
+    <div class="wrap">
+      <h1>KSL 대화통역 연습</h1>
+      <div class="toolbar">
+        <span class="pill" id="modePill">모드: —</span>
+        <button id="btnShuffleAll" class="ghost" title="전체 랜덤 섞기">🔀 전체 랜덤</button>
+      </div>
     </div>
   </header>
 
@@ -55,8 +58,8 @@
     <div class="panel">
       <h2 style="margin:0 0 6px;font-size:18px">시작 모드를 선택하세요</h2>
       <p style="margin:0 0 12px;color:var(--muted);font-size:13px">
-        • <b>음성통역</b>: <u>수어 영상</u>이 먼저 자동 재생됩니다. 정답 토글 시 한국어 문장이 보입니다.<br/>
-        • <b>수화통역</b>: <u>한국어 문장</u>이 먼저 보이고, 한국어 음성이 자동 재생됩니다. 정답 토글 시 영상이 보입니다.
+        • <b>음성통역</b>: <u>수어 영상</u>이 먼저 자동 재생됩니다. 정답 토글 시 문장을 보여줍니다.<br/>
+        • <b>수화통역</b>: <u>문장은 가려진 채</u> 한국어 음성만 자동 재생됩니다. 정답 토글 시 <b>영상과 문장을 동시에</b> 보여줍니다.
       </p>
       <div class="mode-grid">
         <div class="mode">
@@ -65,12 +68,12 @@
           <button class="primary" id="startVoice">음성통역으로 시작</button>
         </div>
         <div class="mode">
-          <h3>🤟 수화통역 (Sentence ▶ → Video)</h3>
-          <p>문장을 보고 수어로 표현하는 연습 (한국어 음성 자동 재생)</p>
+          <h3>🤟 수화통역 (Listen ▶ Reveal Video+Text)</h3>
+          <p>음성만 듣고 수어로 표현 → 정답(스페이스) 시 영상+문장 공개</p>
           <button class="secondary" id="startSign">수화통역으로 시작</button>
         </div>
       </div>
-      <p class="hint">※ 시작 버튼 클릭은 사용자 제스처로 인정되어 영상/음성 자동재생이 원활해집니다.</p>
+      <p class="hint">※ 시작 버튼 클릭(사용자 제스처) 직후 TTS와 영상이 원활히 자동재생되도록 워밍업합니다.</p>
     </div>
   </section>
 
@@ -86,7 +89,7 @@
 
       <div class="controls">
         <button id="btnPrev" class="secondary" title="이전(←)">◀ 이전</button>
-        <button id="btnReveal" class="primary">✅ 정답 토글</button>
+        <button id="btnReveal" class="primary">✅ 정답 토글 (Space)</button>
         <button id="btnHide" class="ghost">숨기기</button>
         <button id="btnNext" class="secondary" title="다음(→)">다음 ▶</button>
         <button id="btnMode" class="ghost" title="모드 전환">모드 전환</button>
@@ -99,25 +102,25 @@
     </section>
   </main>
 
-  <footer>© 2025 KSL Practice · 시작 화면에서 선택한 모드에 따라 영상/음성이 자동 재생됩니다.</footer>
+  <footer>© 2025 KSL Practice · TTS 워밍업으로 초두 유실 최소화, 전체 랜덤 지원</footer>
 
   <script>
     /* =========================
-       1) 데이터 (샘플 1개만)
+       1) 데이터 (원하시면 항목 추가)
        ========================= */
     const DATA = [
-      { k: "사백, 사백 원", ex: "○○이가 일하러 간 카페는 평수가 사백 평으로, 무척 넓다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KNeEL0fNFGpuJfeu.mp4" },
-{ k: "일곱, 칠", ex: "○○이네 가족은 7대째 농인으로 구성되어 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Y2RipTuBQhrMKWhY.mp4" },
-{ k: "억, 일억", ex: "○○이는 1억을 열심히 모아 차를 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KBGalJBcEREj48NM.mp4" },
-{ k: "스물일곱, 이십칠", ex: "○○이는 2월 27일에 결혼한다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/bbPsSo4UeYlobcxa.mp4" },
-{ k: "삼천, 삼천 원", ex: "○○이는 3,000m 달리기 경기에서 1등을 했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/RxSrObezVTztW1qn.mp4" },
-{ k: "넷, 사", ex: "○○이는 공기밥 네 개를 다 비울 정도로 먹성이 좋다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/fWMNqgycUKJyf5DQ.mp4" },
-{ k: "이백", ex: "○○이는 라면 이백 박스를 농아인협회에 기부하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ijobJabyiSHRwLJ3.mp4" },
-{ k: "스물다섯, 이십오", ex: "○○이는 스물다섯 살에 결혼하고 싶다고 말했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/gANdOckOBfK8zGbE.mp4" },
-{ k: "스물여덟, 이십팔", ex: "○○이는 스물여덟 살에 회사를 그만두고, 지금은 기계 기술을 배운다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Tv4SiJVP72GMIdO8.mp4" },
-{ k: "십만, 십만 원", ex: "○○이는 아르바이트로 일당 10만 원을 벌었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/UfEnwCtbQXxQ0v3q.mp4" },
-{ k: "스물여섯, 이십육", ex: "○○이는 임신 26주 차다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ioTnEYGapv9amVRj.mp4" },
-{ k: "구백, 구백 원", ex: "○○이의 본 토익 시험 점수가 900점이라니 대단하다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/FuqvbLSloU5qJnGu.mp4" },
+     { k: "사백, 사백 원", ex: "창열이가 일하러 간 카페는 평수가 사백 평으로, 무척 넓다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KNeEL0fNFGpuJfeu.mp4" },
+{ k: "일곱, 칠", ex: "창열이네 가족은 7대째 농인으로 구성되어 있다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Y2RipTuBQhrMKWhY.mp4" },
+{ k: "억, 일억", ex: "창열이는 1억을 열심히 모아 차를 샀다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/KBGalJBcEREj48NM.mp4" },
+{ k: "스물일곱, 이십칠", ex: "창열이는 2월 27일에 결혼한다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/bbPsSo4UeYlobcxa.mp4" },
+{ k: "삼천, 삼천 원", ex: "창열이는 3,000m 달리기 경기에서 1등을 했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/RxSrObezVTztW1qn.mp4" },
+{ k: "넷, 사", ex: "창열이는 공기밥 네 개를 다 비울 정도로 먹성이 좋다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/fWMNqgycUKJyf5DQ.mp4" },
+{ k: "이백", ex: "창열이는 라면 이백 박스를 농아인협회에 기부하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ijobJabyiSHRwLJ3.mp4" },
+{ k: "스물다섯, 이십오", ex: "창열이는 스물다섯 살에 결혼하고 싶다고 말했다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/gANdOckOBfK8zGbE.mp4" },
+{ k: "스물여덟, 이십팔", ex: "창열이는 스물여덟 살에 회사를 그만두고, 지금은 기계 기술을 배운다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/Tv4SiJVP72GMIdO8.mp4" },
+{ k: "십만, 십만 원", ex: "창열이는 아르바이트로 일당 10만 원을 벌었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/UfEnwCtbQXxQ0v3q.mp4" },
+{ k: "스물여섯, 이십육", ex: "창열이는 임신 26주 차다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/ioTnEYGapv9amVRj.mp4" },
+{ k: "구백, 구백 원", ex: "창열이의 본 토익 시험 점수가 900점이라니 대단하다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/FuqvbLSloU5qJnGu.mp4" },
 { k: "열, 십", ex: "10월 10일은 나의 생일이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/gcrcHdiYmb2BLlR7.mp4" },
 { k: "열다섯, 십오", ex: "5월 15일은 스승의 날이다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/GPqgmaHPrq6cCeYq.mp4" },
 { k: "열여덟, 십팔", ex: "가: 나 어제 새로 나온 청소년 관람 불가 영화를 봤는데, 정말 재미있더라. 나: 아, 그랬구나.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/DAb9X0ZdgiFMYVot.mp4" },
@@ -126,7 +129,7 @@
 { k: "팔백, 팔백 원", ex: "가: 농아인 협회 행사에 참여하는 사람은 몇 명이야? 나: 대략 팔백 명 정도야.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/8bBqVEjHa5wFO6Eb.mp4" },
 { k: "스물아홉, 이십구", ex: "가: 다음 주 5월 29일에 만날 수 있어? 나: 그래.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/CdgUhzSHJNr6cxIM.mp4" },
 { k: "마흔, 사십", ex: "가: 동창이 몇 명이야? 나: 40명.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/75lQ7SasJT4GgFun.mp4" },
-{ k: "(숫자) 조", ex: "가: 소문으로는 ○○네 집이 재산이 1조나 되는 엄청 부잣집이래. 나: 뭐? 뜬소문 아냐?", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/og87SC0Ae6T3OdjK.mp4" },
+{ k: "(숫자) 조", ex: "가: 소문으로는 대희네 집이 재산이 1조나 되는 엄청 부잣집이래. 나: 뭐? 뜬소문 아냐?", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/og87SC0Ae6T3OdjK.mp4" },
 { k: "아홉, 구", ex: "가: 어제 야구 모임에 몇 명이나 왔어요? 나: 아홉 명이요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/F6UlNlinQC6dMQiU.mp4" },
 { k: "열여섯, 십육", ex: "가: 원하는 등번호가 있니? 나: 16번이요.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/0qn0DCT3xp7maAps.mp4" },
 { k: "칠천, 칠천 원", ex: "가: 저기 며칠 전에 내가 너한테 얼마를 빌렸지? 나: 칠천 원이야.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/MPiVaUcM6CSwxie6.mp4" },
@@ -242,67 +245,135 @@
 { k: "육만, 육만 원", ex: "한국과 브라질과의 월드컵 축구 경기에 6만 명의 인파가 몰려들었다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/BZRcUDCXF8d3NL1Q.mp4" },
 { k: "열여덟, 십팔", ex: "할머니 생신 선물을 뭘로 살까 고민하다가 18k 목걸이를 구매하였다.", src: "https://ksldict.korean.go.kr/kslserv/signFile/video/exmp/202405/pYNJsUBQa11kHwDv.mp4" },
 
+
+      // 여기에 더 추가 가능:
+      // { k:"...", ex:"...", src:"..." },
     ];
 
     /* =========================
-       2) 상태 및 요소 참조
+       2) 상태 & 요소
        ========================= */
-    let mode = null; // 'voice' = 음성통역(영상 먼저), 'sign' = 수화통역(문장+TTS 먼저)
+    let mode = null;             // 'voice' | 'sign'
     let cur = 0;
+    let order = [...DATA.keys()];
+    const ORDER_KEY = 'ksl_order_v2';
+
+    // 로컬 저장된 순서 복원
+    try {
+      const saved = JSON.parse(localStorage.getItem(ORDER_KEY)||'null');
+      if (Array.isArray(saved) && saved.length === DATA.length) order = saved.slice();
+    } catch(e){}
 
     const $start = document.getElementById('start');
     const $modePill = document.getElementById('modePill');
-
     const $sentence = document.getElementById('sentence');
     const $kw = document.getElementById('kw');
     const $idx = document.getElementById('idx');
+    const $videoWrap = document.getElementById('videoWrap');
+    const $video = document.getElementById('vid');
 
     const $btnPrev = document.getElementById('btnPrev');
     const $btnNext = document.getElementById('btnNext');
     const $btnReveal = document.getElementById('btnReveal');
     const $btnHide = document.getElementById('btnHide');
     const $btnMode = document.getElementById('btnMode');
-
-    const $videoWrap = document.getElementById('videoWrap');
-    const $video = document.getElementById('vid');
+    const $btnShuffleAll = document.getElementById('btnShuffleAll');
 
     /* =========================
-       3) 보조 함수 (음성/TTS)
+       3) TTS 보조: 워밍업 & 발화
        ========================= */
-    function stopSpeech(){
-      try {
-        window.speechSynthesis.cancel();
-      } catch (e) {}
-    }
-    function speakKorean(text){
-      stopSpeech();
-      if(!('speechSynthesis' in window)) return;
-      const utter = new SpeechSynthesisUtterance(text);
-      // ko-KR 보이스 우선 선택
-      const pickVoice = () => {
-        const voices = speechSynthesis.getVoices();
-        const ko = voices.find(v => /ko-KR/i.test(v.lang)) || voices.find(v => v.lang && v.lang.startsWith('ko'));
-        if(ko) utter.voice = ko;
-        utter.rate = 1.0;
-        utter.pitch = 1.0;
-        utter.volume = 1.0;
-        speechSynthesis.speak(utter);
+    let ttsWarmed = false;
+    let voicesReady = false;
+
+    function loadVoicesOnce(){
+      const tryMark = () => {
+        const v = speechSynthesis.getVoices();
+        if (v && v.length) {
+          voicesReady = true;
+          speechSynthesis.onvoiceschanged = null;
+        }
       };
-      const voices = speechSynthesis.getVoices();
-      if(!voices || voices.length === 0){
-        // 일부 브라우저는 async 로드
-        speechSynthesis.onvoiceschanged = () => { pickVoice(); };
-      } else {
-        pickVoice();
+      tryMark();
+      if (!voicesReady) {
+        speechSynthesis.onvoiceschanged = tryMark;
       }
     }
 
+    function pickKoVoice(){
+      const voices = speechSynthesis.getVoices() || [];
+      return voices.find(v=>/ko-KR/i.test(v.lang)) || voices.find(v=>v.lang && v.lang.startsWith('ko')) || null;
+    }
+
+    // 무음 워밍업: 아주 짧은 발화를 volume 0으로 보냈다가 끝나면 해제
+    function warmTTS(){
+      return new Promise((resolve)=>{
+        if (!('speechSynthesis' in window)) return resolve();
+        if (ttsWarmed) return resolve();
+
+        loadVoicesOnce();
+        const doWarm = () => {
+          const u = new SpeechSynthesisUtterance('.');
+          const v = pickKoVoice();
+          if (v) u.voice = v;
+          u.volume = 0;       // 무음
+          u.rate = 1; u.pitch = 1;
+          u.onend = () => { ttsWarmed = true; resolve(); };
+          u.onerror = () => { ttsWarmed = true; resolve(); };
+          // 일부 브라우저에서 너무 빠르면 무시될 수 있어 약간 지연
+          setTimeout(()=>speechSynthesis.speak(u), 60);
+        };
+
+        // 보이스 로딩 완료 후 약간 지연
+        if (voicesReady) setTimeout(doWarm, 60);
+        else {
+          speechSynthesis.onvoiceschanged = () => {
+            voicesReady = true;
+            speechSynthesis.onvoiceschanged = null;
+            setTimeout(doWarm, 60);
+          };
+        }
+      });
+    }
+
+    function stopSpeech(){ try{ speechSynthesis.cancel(); }catch(e){} }
+
+    async function speakKorean(text){
+      stopSpeech();
+      if (!('speechSynthesis' in window) || !text) return;
+
+      loadVoicesOnce();
+      await warmTTS();
+      // 일부 환경에서 초기 boundary가 잘리는 것을 방지하기 위해 살짝 더 대기
+      await new Promise(r=>setTimeout(r, 120));
+
+      const utter = new SpeechSynthesisUtterance(text);
+      const ko = pickKoVoice();
+      if (ko) utter.voice = ko;
+      utter.rate = 1.0; utter.pitch = 1.0; utter.volume = 1.0;
+      speechSynthesis.speak(utter);
+    }
+
+    /* =========================
+       4) 유틸
+       ========================= */
+    function saveOrder(){
+      try{ localStorage.setItem(ORDER_KEY, JSON.stringify(order)); }catch(e){}
+    }
+    function shuffleAll(){
+      order = [...DATA.keys()];
+      for(let i = order.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      cur = 0;
+      saveOrder();
+      render(true);
+    }
     function stopVideo(){
-      try { $video.pause(); } catch(e){}
+      try{ $video.pause(); }catch(e){}
       $video.removeAttribute('src');
       $video.load();
     }
-
     function hideAll(){
       stopSpeech();
       stopVideo();
@@ -310,105 +381,121 @@
     }
 
     /* =========================
-       4) 렌더
+       5) 렌더
        ========================= */
     function setMode(nextMode){
-      mode = nextMode; // 'voice' | 'sign'
-      $modePill.textContent = "모드: " + (mode === 'voice' ? "음성통역 (영상 먼저)" : "수화통역 (문장+음성 먼저)");
-      $start.style.display = 'none';
-      render(true); // 사용자 제스처 직후 렌더 → 자동재생 시도
+      mode = nextMode;
+      document.getElementById('start').style.display = 'none';
+      $modePill.textContent = "모드: " + (mode==='voice' ? "음성통역 (영상 먼저)" : "수화통역 (음성듣기→정답에 영상+문장)");
+      // 사용자 제스처 직후 TTS 워밍업
+      warmTTS().then(()=>render(true));
     }
 
     function render(autoplay=false){
-      const item = DATA[cur];
+      const item = DATA[ order[cur] ];
       $idx.textContent = `${cur+1} / ${DATA.length}`;
       $kw.textContent = item.k || '—';
       hideAll();
 
-      if(mode === 'voice'){
-        // 음성통역: 영상 먼저, 문장 가림
+      if (mode === 'voice'){
+        // 영상 먼저, 문장 가림
         $sentence.textContent = '정답: (가림)';
-        if(autoplay){
+        if (autoplay){
           $video.src = item.src;
           $videoWrap.style.display = 'block';
-          $video.muted = true; // 무음 자동재생 보장
-          const p = $video.play();
-          if(p && typeof p.then === 'function'){ p.catch(()=>{}); }
+          $video.muted = true;
+          const p = $video.play(); if (p && p.then) p.catch(()=>{});
         }
-      } else if(mode === 'sign'){
-        // 수화통역: 문장 먼저 + 한국어 음성 자동재생
-        $sentence.textContent = item.ex || '—';
-        if(autoplay){
+      } else if (mode === 'sign'){
+        // 변경사항: 음성만 먼저, 문장 가림(영상도 숨김)
+        $sentence.textContent = '문장: (가림)';
+        if (autoplay){
           speakKorean(item.ex || '');
         }
       } else {
-        // 모드 미정
         $sentence.textContent = '시작 화면에서 모드를 선택해 주세요.';
       }
     }
 
     /* =========================
-       5) 이벤트
+       6) 이벤트
        ========================= */
-    document.getElementById('startVoice').addEventListener('click', () => setMode('voice'));
-    document.getElementById('startSign').addEventListener('click', () => setMode('sign'));
+    document.getElementById('startVoice').addEventListener('click', ()=>setMode('voice'));
+    document.getElementById('startSign').addEventListener('click', ()=>setMode('sign'));
 
-    $btnPrev.addEventListener('click', () => {
+    document.getElementById('btnPrev').addEventListener('click', ()=>{
       cur = (cur - 1 + DATA.length) % DATA.length;
       render(true);
     });
-    $btnNext.addEventListener('click', () => {
+    document.getElementById('btnNext').addEventListener('click', ()=>{
       cur = (cur + 1) % DATA.length;
       render(true);
     });
 
-    // 정답 토글: mode에 따라 반대쪽 매체를 보여줌/숨김
-    $btnReveal.addEventListener('click', () => {
-      const item = DATA[cur];
-      if(mode === 'voice'){
-        // 현재 영상 먼저 → 정답 토글 시 문장 공개
-        if($sentence.textContent.includes('(가림)')){
+    // 정답 토글: voice=문장 토글, sign=영상+문장 동시 토글
+    document.getElementById('btnReveal').addEventListener('click', ()=>{
+      const item = DATA[ order[cur] ];
+      if (mode === 'voice'){
+        // 영상은 이미 보이고 → 문장만 토글
+        if ($sentence.textContent.includes('(가림)')){
           $sentence.textContent = item.ex || '—';
         } else {
           $sentence.textContent = '정답: (가림)';
         }
-      } else if(mode === 'sign'){
-        // 현재 문장 먼저 → 정답 토글 시 영상 토글
-        if($videoWrap.style.display === 'none'){
+      } else if (mode === 'sign'){
+        // 음성듣기 단계 → 정답 시 영상+문장 동시 공개 / 다시 누르면 숨김
+        const showing = $videoWrap.style.display !== 'none';
+        if (!showing){
+          stopSpeech(); // 듣기 종료
+          $sentence.textContent = item.ex || '—';
           $video.src = item.src;
           $videoWrap.style.display = 'block';
-          // 문장을 이미 들려줬다면 영상은 자동재생
           $video.muted = true;
-          const p = $video.play();
-          if(p && typeof p.then === 'function'){ p.catch(()=>{}); }
+          const p = $video.play(); if (p && p.then) p.catch(()=>{});
         } else {
+          $sentence.textContent = '문장: (가림)';
           stopVideo();
           $videoWrap.style.display = 'none';
         }
       }
     });
 
-    // 숨기기: 모든 미디어 숨김/중지
-    $btnHide.addEventListener('click', hideAll);
+    document.getElementById('btnHide').addEventListener('click', hideAll);
 
-    // 모드 전환
-    $btnMode.addEventListener('click', () => {
-      stopSpeech(); stopVideo();
+    document.getElementById('btnMode').addEventListener('click', ()=>{
+      hideAll();
       mode = (mode === 'voice') ? 'sign' : 'voice';
-      $modePill.textContent = "모드: " + (mode === 'voice' ? "음성통역 (영상 먼저)" : "수화통역 (문장+음성 먼저)");
+      $modePill.textContent = "모드: " + (mode==='voice' ? "음성통역 (영상 먼저)" : "수화통역 (음성듣기→정답에 영상+문장)");
       render(true);
     });
 
-    // 키보드 네비게이션
+    document.getElementById('btnShuffleAll').addEventListener('click', shuffleAll);
+
     window.addEventListener('keydown', (e)=>{
-      if(['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
-      if(e.key === 'ArrowLeft'){ e.preventDefault(); $btnPrev.click(); }
-      if(e.key === 'ArrowRight'){ e.preventDefault(); $btnNext.click(); }
-      if(e.code === 'Space'){ e.preventDefault(); $btnReveal.click(); }
+      if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+      if (e.key === 'ArrowLeft'){ e.preventDefault(); document.getElementById('btnPrev').click(); }
+      if (e.key === 'ArrowRight'){ e.preventDefault(); document.getElementById('btnNext').click(); }
+      if (e.code === 'Space'){ e.preventDefault(); document.getElementById('btnReveal').click(); }
     });
 
-    // 초기 화면
-    render(false);
+    // 초기가능 상태
+    (function init(){
+      if (!('speechSynthesis' in window)) {
+        console.warn('TTS 미지원 환경');
+      } else {
+        // 사전 로딩 시도
+        try { loadVoicesOnce(); } catch(e){}
+      }
+      // 첫 렌더(모드 미정)
+      const hasData = DATA && DATA.length;
+      if (!hasData){
+        $sentence.textContent = '데이터가 없습니다. DATA 배열에 항목을 추가하세요.';
+      } else {
+        $kw.textContent = DATA[ order[cur] ].k;
+        $idx.textContent = `${cur+1} / ${DATA.length}`;
+        $sentence.textContent = '시작 화면에서 모드를 선택해 주세요.';
+      }
+    })();
   </script>
 </body>
 </html>
