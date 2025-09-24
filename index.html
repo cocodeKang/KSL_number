@@ -344,7 +344,7 @@
       loadVoicesOnce();
       await warmTTS();
       // 일부 환경에서 초기 boundary가 잘리는 것을 방지하기 위해 살짝 더 대기
-      await new Promise(r=>setTimeout(r, 120));
+      await new Promise(r=>setTimeout(r, 240));
 
       const utter = new SpeechSynthesisUtterance(text);
       const ko = pickKoVoice();
